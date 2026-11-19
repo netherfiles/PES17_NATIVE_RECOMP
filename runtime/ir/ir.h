@@ -1,48 +1,12 @@
 #pragma once
 
+#include "operand.h"
 #include <cstdint>
 #include <string>
 #include <vector>
 
 namespace pes17::ir {
 
-enum class Register {
-    None,
-    EAX, EBX, ECX, EDX,
-    ESI, EDI, EBP, ESP
-};
-
-enum class Flag : std::uint8_t {
-    ZF = 1 << 0,
-    CF = 1 << 1,
-    SF = 1 << 2,
-    OF = 1 << 3
-};
-
-enum class OperandKind {
-    None,
-    Register,
-    Immediate,
-    Memory
-};
-
-struct MemoryOperand {
-    Register base = Register::None;
-    Register index = Register::None;
-    std::uint8_t scale = 0;
-    std::int32_t displacement = 0;
-    std::uint8_t width = 0;
-};
-
-struct Operand {
-    OperandKind kind = OperandKind::None;
-    std::uint8_t width = 0;
-    Register reg = Register::None;
-    std::uint64_t immediate = 0;
-    MemoryOperand memory;
-};
-
-// AQUI ESTÃO TODAS AS INSTRUÇÕES QUE O SEU TRADUTOR CONHECE
 enum class Opcode {
     Push,
     Pop,
@@ -59,8 +23,6 @@ enum class Opcode {
     BranchIfEqual,
     BranchIfNotEqual,
     Return,
-    
-    // As novas instruções que adicionamos para destravar o jogo
     Increment,
     Xor,
     ShiftLeft,
@@ -71,9 +33,10 @@ enum class Opcode {
     SubtractWithBorrow,
     Exchange,
     PushFlags,
-
     Unsupported
 };
+
+const char* opcodeName(Opcode opcode);
 
 struct Instruction {
     std::uint64_t sourceAddress = 0;
