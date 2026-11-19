@@ -140,6 +140,10 @@ Instruction X86Lifter::liftInstruction(
         case X86_INS_CALL:
             result.opcode = source.hasTarget ? Opcode::CallDirect : Opcode::CallIndirect;
             break;
+            
+        case X86_INS_LCALL:
+            result.opcode = Opcode::CallDirect;
+            break;
 
         case X86_INS_JMP:
             result.opcode = Opcode::Branch;
