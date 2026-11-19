@@ -35,6 +35,7 @@ jobs:
         cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
               -DANDROID_ABI=arm64-v8a \
               -DANDROID_PLATFORM=android-24 \
+              -DBUILD_SHARED_LIBS=ON \
               -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/capstone_install \
               ..
         make -j4
@@ -43,7 +44,7 @@ jobs:
     - name: Copiar Capstone para o APK
       run: |
         mkdir -p app/src/main/jniLibs/arm64-v8a
-        cp $GITHUB_WORKSPACE/capstone_install/lib/libcapstone.so app/src/main/jniLibs/arm64-v8a/
+        find $GITHUB_WORKSPACE/capstone -name "libcapstone.so" -exec cp {} app/src/main/jniLibs/arm64-v8a/ \;
 
     - name: Compilar APK com Gradle
       run: |
