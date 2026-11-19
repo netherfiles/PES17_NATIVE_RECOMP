@@ -24,6 +24,13 @@ android {
         }
     }
 
+    # ISSO AQUI VAI CONSERTAR O JAVA
+    sourceSets {
+        main {
+            java.srcDirs = ['src/main/java']
+        }
+    }
+
     externalNativeBuild {
         cmake {
             path "../CMakeLists.txt"
