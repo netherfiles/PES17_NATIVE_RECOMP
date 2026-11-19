@@ -19,8 +19,6 @@ const char* opcodeName(Opcode opcode) {
         case Opcode::BranchIfEqual: return "BranchIfEqual";
         case Opcode::BranchIfNotEqual: return "BranchIfNotEqual";
         case Opcode::Return: return "Return";
-        
-        // Nomes das novas instruções
         case Opcode::Increment: return "Increment";
         case Opcode::Xor: return "Xor";
         case Opcode::ShiftLeft: return "ShiftLeft";
@@ -31,7 +29,7 @@ const char* opcodeName(Opcode opcode) {
         case Opcode::SubtractWithBorrow: return "SubtractWithBorrow";
         case Opcode::Exchange: return "Exchange";
         case Opcode::PushFlags: return "PushFlags";
-        
+        case Opcode::Fcmovu: return "Fcmovu";
         case Opcode::Unsupported: return "Unsupported";
     }
     return "Unknown";
