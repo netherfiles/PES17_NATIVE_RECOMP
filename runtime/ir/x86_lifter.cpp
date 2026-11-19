@@ -103,19 +103,12 @@ Instruction X86Lifter::liftInstruction(
 
         case X86_INS_MOV:
             if (result.operands.size() >= 2) {
-                const auto dstKind =
-                    result.operands[0].kind;
+                const auto dstKind = result.operands[0].kind;
+                const auto srcKind = result.operands[1].kind;
 
-                const auto srcKind =
-                    result.operands[1].kind;
-
-                if (dstKind == OperandKind::Register &&
-                    srcKind == OperandKind::Memory) {
+                if (dstKind == OperandKind::Register && srcKind == OperandKind::Memory) {
                     result.opcode = Opcode::Load;
-                } else if (
-                    dstKind == OperandKind::Memory &&
-                    (srcKind == OperandKind::Register ||
-                     srcKind == OperandKind::Immediate)) {
+                } else if (dstKind == OperandKind::Memory && (srcKind == OperandKind::Register || srcKind == OperandKind::Immediate)) {
                     result.opcode = Opcode::Store;
                 } else {
                     result.opcode = Opcode::Move;
@@ -131,36 +124,21 @@ Instruction X86Lifter::liftInstruction(
 
         case X86_INS_ADD:
             result.opcode = Opcode::Add;
-            result.flagsWritten =
-                static_cast<std::uint8_t>(Flag::ZF) |
-                static_cast<std::uint8_t>(Flag::CF) |
-                static_cast<std::uint8_t>(Flag::SF) |
-                static_cast<std::uint8_t>(Flag::OF);
+            result.flagsWritten = static_cast<std::uint8_t>(Flag::ZF) | static_cast<std::uint8_t>(Flag::CF) | static_cast<std::uint8_t>(Flag::SF) | static_cast<std::uint8_t>(Flag::OF);
             break;
 
         case X86_INS_SUB:
             result.opcode = Opcode::Subtract;
-            result.flagsWritten =
-                static_cast<std::uint8_t>(Flag::ZF) |
-                static_cast<std::uint8_t>(Flag::CF) |
-                static_cast<std::uint8_t>(Flag::SF) |
-                static_cast<std::uint8_t>(Flag::OF);
+            result.flagsWritten = static_cast<std::uint8_t>(Flag::ZF) | static_cast<std::uint8_t>(Flag::CF) | static_cast<std::uint8_t>(Flag::SF) | static_cast<std::uint8_t>(Flag::OF);
             break;
 
         case X86_INS_CMP:
             result.opcode = Opcode::Compare;
-            result.flagsWritten =
-                static_cast<std::uint8_t>(Flag::ZF) |
-                static_cast<std::uint8_t>(Flag::CF) |
-                static_cast<std::uint8_t>(Flag::SF) |
-                static_cast<std::uint8_t>(Flag::OF);
+            result.flagsWritten = static_cast<std::uint8_t>(Flag::ZF) | static_cast<std::uint8_t>(Flag::CF) | static_cast<std::uint8_t>(Flag::SF) | static_cast<std::uint8_t>(Flag::OF);
             break;
 
         case X86_INS_CALL:
-            result.opcode =
-                source.hasTarget
-                    ? Opcode::CallDirect
-                    : Opcode::CallIndirect;
+            result.opcode = source.hasTarget ? Opcode::CallDirect : Opcode::CallIndirect;
             break;
 
         case X86_INS_JMP:
@@ -169,19 +147,66 @@ Instruction X86Lifter::liftInstruction(
 
         case X86_INS_JE:
             result.opcode = Opcode::BranchIfEqual;
-            result.flagsRead =
-                static_cast<std::uint8_t>(Flag::ZF);
+            result.flagsRead = static_cast<std::uint8_t>(Flag::ZF);
             break;
 
         case X86_INS_JNE:
             result.opcode = Opcode::BranchIfNotEqual;
-            result.flagsRead =
-                static_cast<std::uint8_t>(Flag::ZF);
+            result.flagsRead = static_cast<std::uint8_t>(Flag::ZF);
             break;
 
         case X86_INS_RET:
         case X86_INS_RETF:
             result.opcode = Opcode::Return;
+            break;
+
+        // ==========================================
+        // NOVAS INSTRUÇÕES ADICIONADAS
+        // ==========================================
+        case X86_INS_INC:
+            result.opcode = Opcode::Increment;
+            result.flagsWritten = static_cast<std::uint8_t>(Flag::ZF) | static_cast<std::uint8_t>(Flag::CF) | static_cast<std::uint8_t>(Flag::SF) | static_cast<std::uint8_t>(Flag::OF);
+            break;
+
+        case X86_INS_XOR:
+            result.opcode = Opcode::Xor;
+            result.flagsWritten = static_cast<std::uint8_t>(Flag::ZF) | static_cast<std::uint8_t>(Flag::CF) | static_cast<std::uint8_t>(Flag::SF) | static_cast<std::uint8_t>(Flag::OF);
+            break;
+
+        case X86_INS_SHL:
+            result.opcode = Opcode::ShiftLeft;
+            result.flagsWritten = static_cast<std::uint8_t>(Flag::ZF) | static_cast<std::uint8_t>(Flag::CF) | static_cast<std::uint8_t>(Flag::SF) | static_cast<std::uint8_t>(Flag::OF);
+            break;
+
+        case X86_INS_TEST:
+            result.opcode = Opcode::Test;
+            result.flagsWritten = static_cast<std::uint8_t>(Flag::ZF) | static_cast<std::uint8_t>(Flag::CF) | static_cast<std::uint8_t>(Flag::SF) | static_cast<std::uint8_t>(Flag::OF);
+            break;
+
+        case X86_INS_MOVZX:
+            result.opcode = Opcode::MoveZeroExtend;
+            break;
+
+        case X86_INS_JA:
+            result.opcode = Opcode::BranchIfAbove;
+            break;
+
+        case X86_INS_SETE:
+            result.opcode = Opcode::SetIfEqual;
+            result.flagsRead = static_cast<std::uint8_t>(Flag::ZF);
+            break;
+
+        case X86_INS_SBB:
+            result.opcode = Opcode::SubtractWithBorrow;
+            result.flagsWritten = static_cast<std::uint8_t>(Flag::ZF) | static_cast<std::uint8_t>(Flag::CF) | static_cast<std::uint8_t>(Flag::SF) | static_cast<std::uint8_t>(Flag::OF);
+            break;
+
+        case X86_INS_XCHG:
+            result.opcode = Opcode::Exchange;
+            break;
+
+        case X86_INS_PUSHFD:
+            result.opcode = Opcode::PushFlags;
             break;
 
         default:
