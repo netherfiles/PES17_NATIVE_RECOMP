@@ -24,7 +24,7 @@ android {
         }
     }
 
-    # ISSO AQUI VAI CONSERTAR O JAVA
+    // AQUI ESTÁ O COMANDO CERTO PARA O GRADLE ACHAR O JAVA
     sourceSets {
         main {
             java.srcDirs = ['src/main/java']
