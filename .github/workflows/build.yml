@@ -22,29 +22,14 @@ jobs:
     - name: Instalar NDK e CMake
       run: |
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;25.1.8937393" "cmake;3.22.1"
-        echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.1.8937393" >> $GITHUB_ENV
-
-    - name: Compilar Capstone (Estático)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ninja-build pkg-config git
-        git clone https://github.com/capstone-engine/capstone.git
-        cd capstone
-        mkdir build && cd build
-        cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
-              -DANDROID_ABI=arm64-v8a \
-              -DANDROID_PLATFORM=android-24 \
-              -DBUILD_SHARED_LIBS=OFF \
-              -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/capstone_install \
-              ..
-        make -j4
-        make install
+        # ATUALIZADO PARA O NDK 27
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973" "cmake;3.22.1"
+        echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> $GITHUB_ENV
 
     - name: Compilar APK com Gradle
       run: |
         gradle wrapper
-        ./gradlew assembleDebug -PCMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/capstone_install
+        ./gradlew assembleDebug
 
     - name: Salvar o APK
       uses: actions/upload-artifact@v4
