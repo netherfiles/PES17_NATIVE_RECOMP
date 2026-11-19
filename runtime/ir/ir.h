@@ -7,6 +7,14 @@
 
 namespace pes17::ir {
 
+// Re-adicionando as Flags que o compilador estava pedindo
+enum class Flag : std::uint8_t {
+    ZF = 1 << 0,
+    CF = 1 << 1,
+    SF = 1 << 2,
+    OF = 1 << 3
+};
+
 enum class Opcode {
     Push,
     Pop,
@@ -62,10 +70,6 @@ struct Function {
     int unsupportedCount = 0;
 };
 
-struct VerificationResult {
-    bool valid = true;
-    int errors = 0;
-    std::vector<std::string> messages;
-};
+// Removi a struct VerificationResult daqui, pois ela já existe no verifier.h
 
 } // namespace pes17::ir
