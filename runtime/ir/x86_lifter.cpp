@@ -160,9 +160,6 @@ Instruction X86Lifter::liftInstruction(
             result.opcode = Opcode::Return;
             break;
 
-        // ==========================================
-        // NOVAS INSTRUÇÕES ADICIONADAS
-        // ==========================================
         case X86_INS_INC:
             result.opcode = Opcode::Increment;
             result.flagsWritten = static_cast<std::uint8_t>(Flag::ZF) | static_cast<std::uint8_t>(Flag::CF) | static_cast<std::uint8_t>(Flag::SF) | static_cast<std::uint8_t>(Flag::OF);
@@ -209,6 +206,10 @@ Instruction X86Lifter::liftInstruction(
             result.opcode = Opcode::PushFlags;
             break;
 
+        case X86_INS_FCMOVU:
+            result.opcode = Opcode::Fcmovu;
+            break;
+
         default:
             result.opcode = Opcode::Unsupported;
             break;
@@ -252,4 +253,4 @@ Function X86Lifter::lift(
     return result;
 }
 
-}
+} // namespace pes17::ir
