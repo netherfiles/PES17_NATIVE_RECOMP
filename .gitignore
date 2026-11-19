@@ -1,0 +1,6 @@
+build/
+logs/
+runtime-v*/
+*.exe
+*.dll
+*.cpk

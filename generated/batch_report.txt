@@ -1,0 +1,30 @@
+PES17_NATIVE_RECOMP V0.18 batch report
+analyzed=5
+generated=0
+blocked=5
+unresolved=0
+
+blockers:
+  1 x IR contains unsupported instructions: 1
+  1 x IR contains unsupported instructions: 19
+  1 x IR contains unsupported instructions: 6
+  1 x Unsupported opcode CallDirect at 0x047d600a
+  1 x Unsupported opcode CallIndirect at 0x047d5018
+  1 x Unsupported x86 fcmovu
+  6 x Unsupported x86 inc
+  2 x Unsupported x86 ja
+  2 x Unsupported x86 movzx
+  2 x Unsupported x86 pushfd
+  1 x Unsupported x86 sbb
+  1 x Unsupported x86 sete
+  1 x Unsupported x86 shl
+  5 x Unsupported x86 test
+  1 x Unsupported x86 xchg
+  4 x Unsupported x86 xor
+
+functions:
+  0x038e6c30 status=verify-failed blocks=43 instructions=143 unsupported=19 reason=IR contains unsupported instructions: 19 | 0x038e696a xor ebx, ebx | 0x038e69bd xor esi, esi | 0x038e69bf inc esi | 0x038e69d5 xor esi, esi | 0x038e69d7 inc esi | 0x038e69f0 test eax, eax | 0x038e6a0b test eax, eax | 0x038e6a70 test eax, eax | 0x038e6a8f ja 0x38e6ae6 | 0x038e6aa5 ja 0x38e6ab0 | 0x038e6aa7 inc esi | 0x038e6ab0 test byte ptr [ebp - 0x40], 1 | 0x038e6ab9 movzx eax, word ptr [ebp - 0x3c] | 0x038e6aea xor ecx, ecx | 0x038e6af2 sete cl | 0x038e6afb movzx eax, al | 0x038e6b06 test eax, eax | 0x038e6b0a inc esi | 0x038e6b11 inc esi
+  0x039105a0 status=verify-failed blocks=3 instructions=13 unsupported=6 reason=IR contains unsupported instructions: 6 | 0x04aa5286 pushfd | 0x04aa5290 pushfd | 0x04aa5296 sbb al, 0xd7 | 0x04aa5298 shl dword ptr [esi + edi*4 + 0x67], 0x2b | 0x04aa529d fcmovu st(0), st(6) | 0x04aa529f inc ecx
+  0x047d4020 status=verify-failed blocks=1 instructions=25 unsupported=1 reason=IR contains unsupported instructions: 1 | 0x047d4063 xchg dword ptr [esp], eax
+  0x047d5000 status=codegen-failed blocks=4 instructions=20 unsupported=0 reason=Unsupported opcode CallIndirect at 0x047d5018
+  0x047d6000 status=codegen-failed blocks=1 instructions=10 unsupported=0 reason=Unsupported opcode CallDirect at 0x047d600a

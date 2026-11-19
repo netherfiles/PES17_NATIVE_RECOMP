@@ -1,0 +1,10 @@
+PES 2017 PC Optimized - Build Manifest
+Generated: 2026-11-14T17:24:56-03:00
+
+771d69d42cea26cffa5ab54d28985a99207d093fcac054c8a2c24297ca64dc45  /storage/emulated/0/Download/Pro Evolution Soccer 2017 Optimized/Pro Evolution Soccer 2017 Optimized/pesdata/PES2017.exe
+221b76b1989de66ecfe70851a937e7515f94ba11a5c2dff0dc5658de1ee65873  /storage/emulated/0/Download/Pro Evolution Soccer 2017 Optimized/Pro Evolution Soccer 2017 Optimized/pesdata/Settings.exe
+0b49e2fae0cd5eff2e614eecceca41d9653ce8fc2870332a698401d56f6c2bd8  /storage/emulated/0/Download/Pro Evolution Soccer 2017 Optimized/Pro Evolution Soccer 2017 Optimized/pesdata/Settings_b.dll
+b91dd8ea094cb11174e2dbee386b40eefccf3cf6ed743ec58935638b8532b3fc  /storage/emulated/0/Download/Pro Evolution Soccer 2017 Optimized/Pro Evolution Soccer 2017 Optimized/pesdata/optiprojects.js
+4cd65a0a2f609f3441876e04dfd7f536f1daf14d0daef1a18d9a9fd096617178  /storage/emulated/0/Download/Pro Evolution Soccer 2017 Optimized/Pro Evolution Soccer 2017 Optimized/pesdata/OPT.ini
+a56ed893cccd3df41443b3f76d440c7601f6e1907490f65a7f5c41bf30a238e5  /storage/emulated/0/Download/Pro Evolution Soccer 2017 Optimized/Pro Evolution Soccer 2017 Optimized/pesdata/commandline.txt
+603d2218cd801969b2d6de3574da007d94211dd762273a480a3afe566d26ca92  /storage/emulated/0/Download/Pro Evolution Soccer 2017 Optimized/Pro Evolution Soccer 2017 Optimized/pesdata/download/DpFileList.bin

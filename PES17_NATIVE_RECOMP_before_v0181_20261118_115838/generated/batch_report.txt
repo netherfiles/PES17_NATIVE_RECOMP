@@ -1,0 +1,19 @@
+PES17_NATIVE_RECOMP V0.18 batch report
+analyzed=5
+generated=0
+blocked=5
+unresolved=0
+
+blockers:
+  1 x IR contains unsupported instructions: 1
+  1 x IR contains unsupported instructions: 19
+  1 x IR contains unsupported instructions: 6
+  1 x Unsupported opcode Address at 0x047d5003
+  1 x Unsupported opcode Address at 0x047d6003
+
+functions:
+  0x038e6c30 status=verify-failed blocks=43 instructions=143 unsupported=19 reason=IR contains unsupported instructions: 19
+  0x039105a0 status=verify-failed blocks=3 instructions=13 unsupported=6 reason=IR contains unsupported instructions: 6
+  0x047d4020 status=verify-failed blocks=1 instructions=25 unsupported=1 reason=IR contains unsupported instructions: 1
+  0x047d5000 status=codegen-failed blocks=4 instructions=20 unsupported=0 reason=Unsupported opcode Address at 0x047d5003
+  0x047d6000 status=codegen-failed blocks=1 instructions=10 unsupported=0 reason=Unsupported opcode Address at 0x047d6003
