@@ -4,39 +4,34 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class MainActivity extends Activity {
-    
-    // A ponte para o C++
     public native String getNativeMessage();
-
-    static {
-        try {
-            System.loadLibrary("pes17");
-            Log.i("PES17", "Biblioteca carregada com sucesso!");
-        } catch (UnsatisfiedLinkError e) {
-            Log.e("PES17", "Falha ao carregar libpes17.so: " + e.getMessage());
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Cria uma tela simples
         TextView textView = new TextView(this);
-        textView.setTextSize(20);
-        textView.setPadding(50, 50, 50, 50);
-        
-        try {
-            // Chama a função do C++ para ver se a ponte funciona
-            String msg = getNativeMessage();
-            textView.setText("SUCESSO!\n" + msg);
-        } catch (Exception e) {
-            textView.setText("O APP ABRIU, mas o C++ não respondeu.\nErro: " + e.getMessage());
-        }
-        
+        textView.setTextSize(18);
+        textView.setPadding(40, 40, 40, 40);
+        textView.setText("Iniciando o app...\n");
         setContentView(textView);
+
+        try {
+            System.loadLibrary("pes17");
+            textView.append("✅ libpes17.so carregada!\n");
+        } catch (Throwable t) {
+            textView.append("❌ Erro ao carregar libpes17.so:\n" + t.getMessage());
+            return;
+        }
+
+        try {
+            String msg = getNativeMessage();
+            textView.append("✅ Ponte JNI funcionou:\n" + msg);
+        } catch (Throwable t) {
+            textView.append("❌ Erro na Ponte JNI:\n" + t.getMessage());
+            Log.e("PES17", "Erro JNI", t);
+        }
     }
 }
