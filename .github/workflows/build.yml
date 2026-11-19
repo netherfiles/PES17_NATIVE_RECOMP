@@ -1,7 +1,7 @@
 name: Compilar PES17 Nativo
 
 on:
-  workflow_dispatch: # Permite rodar manualmente clicando em um botão
+  workflow_dispatch:
 
 jobs:
   build_android:
@@ -19,10 +19,10 @@ jobs:
         ndk-version: r25c
         add-to-path: true
 
-    - name: Instalar CMake e Ninja
+    - name: Instalar Dependências (CMake, Ninja, Capstone)
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build
+        sudo apt-get install -y cmake ninja-build pkg-config libcapstone-dev
 
     - name: Compilar o Projeto
       run: |
@@ -35,4 +35,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: pes17-libs
-        path: build/ # Vai pegar tudo que foi gerado na pasta build
+        path: build/
