@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace 'com.pes17.recomp'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.pes17.recomp"
         minSdk 24
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
         ndk {
@@ -17,14 +17,12 @@ android {
         }
         externalNativeBuild {
             cmake {
-                cppFlags "-std=c++20"
-                def capstonePath = project.findProperty("CMAKE_PREFIX_PATH") ?: ""
-                arguments "-DANDROID_STL=c++_shared", "-DCMAKE_PREFIX_PATH=${capstonePath}"
+                cppFlags "-std=c++20 -Wl,-z,max-page-size=16384"
+                arguments "-DANDROID_STL=c++_static"
             }
         }
     }
 
-    // AQUI ESTÁ O COMANDO CERTO PARA O GRADLE ACHAR O JAVA
     sourceSets {
         main {
             java.srcDirs = ['src/main/java']
