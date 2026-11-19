@@ -5,8 +5,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# MUDANÇA AQUI: Transformando em biblioteca (.so) e tirando o main.cpp
+# AQUI ESTÁ O SEGREDO: Adicionamos o jni_bridge.cpp na lista
 add_library(pes17 SHARED
+    jni_bridge.cpp
     runtime/core/build_info.cpp
     runtime/pe/pe_image.cpp
     runtime/x86/decoder.cpp
@@ -28,7 +29,6 @@ add_library(pes17 SHARED
     runtime/analysis/call_graph_analyzer.cpp
 )
 
-# MUDANÇA AQUI: Trocando pes17_host por pes17
 target_include_directories(pes17 PRIVATE runtime)
 
 target_compile_options(pes17 PRIVATE
@@ -48,6 +48,7 @@ target_link_directories(pes17 PRIVATE
     ${CAPSTONE_LIBRARY_DIRS}
 )
 
+# AQUI TAMBÉM: Adicionamos 'log' e 'android' no final
 target_link_libraries(pes17 PRIVATE
     ${CAPSTONE_LIBRARIES}
     log
