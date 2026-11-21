@@ -8,39 +8,20 @@
 namespace pes17::ir {
 
 enum class Flag : std::uint8_t {
-    ZF = 1 << 0,
-    CF = 1 << 1,
-    SF = 1 << 2,
-    OF = 1 << 3
+    ZF = 1 << 0, CF = 1 << 1, SF = 1 << 2, OF = 1 << 3
 };
 
 enum class Opcode {
-    Push,
-    Pop,
-    Load,
-    Store,
-    Move,
-    Address,
-    Add,
-    Subtract,
-    Compare,
-    CallDirect,
-    CallIndirect,
-    Branch,
-    BranchIfEqual,
-    BranchIfNotEqual,
-    Return,
-    Increment,
-    Xor,
-    ShiftLeft,
-    Test,
-    MoveZeroExtend,
-    BranchIfAbove,
-    SetIfEqual,
-    SubtractWithBorrow,
-    Exchange,
-    PushFlags,
-    Fcmovu,
+    Push, Pop, Load, Store, Move, Address, Add, Subtract, Compare,
+    CallDirect, CallIndirect, Branch, BranchIfEqual, BranchIfNotEqual, Return,
+    Increment, Xor, ShiftLeft, Test, MoveZeroExtend, BranchIfAbove,
+    SetIfEqual, SubtractWithBorrow, Exchange, PushFlags, Fcmovu,
+    
+    // OPCODES NOVOS (AQUI ESTAVA O ERRO)
+    And, Or, ShiftRight, 
+    PushFpu, PopFpu, AddFpu, MulFpu, DivFpu,
+    MoveAligned,
+    
     Unsupported
 };
 
