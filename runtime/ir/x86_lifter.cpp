@@ -88,7 +88,6 @@ Instruction X86Lifter::liftInstruction(const x86::DecodedInstruction& source) co
         case X86_INS_RET:
         case X86_INS_RETF: result.opcode = Opcode::Return; break;
         
-        // As que a gente já fez
         case X86_INS_INC: result.opcode = Opcode::Increment; setMathFlags(); break;
         case X86_INS_XOR: result.opcode = Opcode::Xor; setMathFlags(); break;
         case X86_INS_SHL: result.opcode = Opcode::ShiftLeft; setMathFlags(); break;
@@ -101,25 +100,20 @@ Instruction X86Lifter::liftInstruction(const x86::DecodedInstruction& source) co
         case X86_INS_PUSHFD: result.opcode = Opcode::PushFlags; break;
         case X86_INS_FCMOVU: result.opcode = Opcode::Fcmovu; break;
 
-        // NOVAS (Baseadas no relatório do Claude)
+        // Instruções do Claude (Corrigidas sem os X86_INS_FADDP etc)
         case X86_INS_AND: result.opcode = Opcode::And; setMathFlags(); break;
         case X86_INS_OR: result.opcode = Opcode::Or; setMathFlags(); break;
         case X86_INS_SHR: result.opcode = Opcode::ShiftRight; setMathFlags(); break;
-        case X86_INS_SAR: result.opcode = Opcode::ShiftRight; setMathFlags(); break; // Shift aritmético (tratado igual por enquanto)
+        case X86_INS_SAR: result.opcode = Opcode::ShiftRight; setMathFlags(); break;
         
-        // Matemática de Ponto Flutuante (x87)
         case X86_INS_FLD: result.opcode = Opcode::PushFpu; break;
-        case X86_INS_FSTP: result.opcode = Opcode::PopFpu; break;
-        case X86_INS_FST: result.opcode = Opcode::PopFpu; break;
-        case X86_INS_FADD: result.opcode = Opcode::AddFpu; break;
-        case X86_INS_FADDP: result.opcode = Opcode::AddFpu; break;
-        case X86_INS_FMUL: result.opcode = Opcode::MulFpu; break;
-        case X86_INS_FMULP: result.opcode = Opcode::MulFpu; break;
-        case X86_INS_FDIV: result.opcode = Opcode::DivFpu; break;
-        case X86_INS_FDIVP: result.opcode = Opcode::DivFpu; break;
         case X86_INS_FILD: result.opcode = Opcode::PushFpu; break;
+        case X86_INS_FST: result.opcode = Opcode::PopFpu; break;
+        case X86_INS_FSTP: result.opcode = Opcode::PopFpu; break;
+        case X86_INS_FADD: result.opcode = Opcode::AddFpu; break;
+        case X86_INS_FMUL: result.opcode = Opcode::MulFpu; break;
+        case X86_INS_FDIV: result.opcode = Opcode::DivFpu; break;
 
-        // Instruções SIMD (SSE)
         case X86_INS_MOVAPS: result.opcode = Opcode::MoveAligned; break;
         case X86_INS_MOVSS: result.opcode = Opcode::MoveAligned; break;
 
