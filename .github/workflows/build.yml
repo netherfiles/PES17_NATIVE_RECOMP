@@ -1,4 +1,4 @@
-name: Compilar Host Termux
+name: Compilar Host Termux (ARM64)
 
 on:
   workflow_dispatch:
@@ -10,22 +10,37 @@ jobs:
     - name: Baixar Código
       uses: actions/checkout@v4
 
-    - name: Instalar Dependências (CMake e Capstone)
+    - name: Instalar NDK e CMake
+      run: |
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;25.1.8937393" "cmake;3.22.1"
+        echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.1.8937393" >> $GITHUB_ENV
+
+    - name: Compilar Capstone para Android
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build pkg-config git
+        sudo apt-get install -y ninja-build pkg-config git
         git clone https://github.com/capstone-engine/capstone.git
         cd capstone
         mkdir build && cd build
-        cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=OFF ..
+        cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+              -DANDROID_ABI=arm64-v8a \
+              -DANDROID_PLATFORM=android-24 \
+              -DBUILD_SHARED_LIBS=OFF \
+              -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/capstone_install \
+              ..
         make -j4
-        sudo make install
+        make install
 
     - name: Compilar o Executável (pes17_host)
       run: |
         mkdir build
         cd build
-        cmake -G Ninja ..
+        cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+              -DANDROID_ABI=arm64-v8a \
+              -DANDROID_PLATFORM=android-24 \
+              -DCMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/capstone_install \
+              ..
         ninja
 
     - name: Salvar o Executável
