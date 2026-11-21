@@ -19,8 +19,8 @@ enum class Opcode {
     
     // NOVOS OPCODES (Baseados na análise do Claude)
     And, Or, ShiftRight, 
-    PushFpu, PopFpu, AddFpu, MulFpu, DivFpu, // Instruções x87 (Floating Point)
-    MoveAligned, // Para movaps e movss (SSE)
+    PushFpu, PopFpu, AddFpu, MulFpu, DivFpu,
+    MoveAligned,
     
     Unsupported
 };
