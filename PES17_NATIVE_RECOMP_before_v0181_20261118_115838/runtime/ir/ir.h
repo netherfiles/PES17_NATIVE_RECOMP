@@ -17,7 +17,7 @@ enum class Opcode {
     Increment, Xor, ShiftLeft, Test, MoveZeroExtend, BranchIfAbove,
     SetIfEqual, SubtractWithBorrow, Exchange, PushFlags, Fcmovu,
     
-    // NOVOS OPCODES (Baseados na análise do Claude)
+    // OPCODES NOVOS (AQUI ESTAVA O ERRO)
     And, Or, ShiftRight, 
     PushFpu, PopFpu, AddFpu, MulFpu, DivFpu,
     MoveAligned,
