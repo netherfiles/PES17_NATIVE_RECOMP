@@ -30,6 +30,18 @@ const char* opcodeName(Opcode opcode) {
         case Opcode::Exchange: return "Exchange";
         case Opcode::PushFlags: return "PushFlags";
         case Opcode::Fcmovu: return "Fcmovu";
+        
+        // AS NOVAS
+        case Opcode::And: return "And";
+        case Opcode::Or: return "Or";
+        case Opcode::ShiftRight: return "ShiftRight";
+        case Opcode::PushFpu: return "PushFpu";
+        case Opcode::PopFpu: return "PopFpu";
+        case Opcode::AddFpu: return "AddFpu";
+        case Opcode::MulFpu: return "MulFpu";
+        case Opcode::DivFpu: return "DivFpu";
+        case Opcode::MoveAligned: return "MoveAligned";
+        
         case Opcode::Unsupported: return "Unsupported";
     }
     return "Unknown";
