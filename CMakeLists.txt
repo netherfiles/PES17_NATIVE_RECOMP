@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 3.16)
 project(pes17_native_recomp VERSION 0.0.1 LANGUAGES CXX)
 
@@ -26,9 +27,15 @@ add_executable(pes17_host
     runtime/execution/function_executor_test.cpp
     runtime/execution/executor_test.cpp
     runtime/analysis/call_graph_analyzer.cpp
+
+    runtime/win32/win32_stubs.cpp
+    runtime/win32/win32_file_stubs.cpp
 )
 
-target_include_directories(pes17_host PRIVATE runtime)
+target_include_directories(pes17_host PRIVATE
+    runtime
+    runtime/win32
+)
 
 target_compile_options(pes17_host PRIVATE
     -Wall
