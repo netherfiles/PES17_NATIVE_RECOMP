@@ -100,7 +100,7 @@ Instruction X86Lifter::liftInstruction(const x86::DecodedInstruction& source) co
         case X86_INS_PUSHFD: result.opcode = Opcode::PushFlags; break;
         case X86_INS_FCMOVU: result.opcode = Opcode::Fcmovu; break;
 
-        // Instruções do Claude (Corrigidas sem os X86_INS_FADDP etc)
+        // Instruções do Claude (Matemática e Ponto Flutuante)
         case X86_INS_AND: result.opcode = Opcode::And; setMathFlags(); break;
         case X86_INS_OR: result.opcode = Opcode::Or; setMathFlags(); break;
         case X86_INS_SHR: result.opcode = Opcode::ShiftRight; setMathFlags(); break;
