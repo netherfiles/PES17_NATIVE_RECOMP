@@ -783,22 +783,21 @@ int main(int argc, char** argv) {
     constexpr std::uint32_t guestBase   = 0x10000000u;
     constexpr std::uint32_t listAddress = guestBase + 0x100u;
 
-    pes17::execution::MachineState realState(
+    pes17::execution::MachineState testState(
         guestBase,
         0x1000);
 
-    realState.reg(pes17::ir::Register::ECX) =
-        listAddress;
+    testState.reg(pes17::ir::Register::ECX) = listAddress;
 
-    if (!realState.memory.write32(listAddress, 0)) {
+    if (!testState.memory.write32(listAddress, 0)) {
         std::cerr << "Real PES IR test FAILED: memory setup\n";
         return 31;
     }
 
-    pes17::execution::Executor realExecutor(realState);
+    pes17::execution::Executor testExecutor(testState);
 
     const auto realResult =
-        realExecutor.executeBlock(*realBlock);
+        testExecutor.executeBlock(*realBlock);
 
     if (!realResult.success) {
         std::cerr
@@ -808,7 +807,7 @@ int main(int argc, char** argv) {
         return 32;
     }
 
-    if (!realState.flags.zf) {
+    if (!testState.flags.zf) {
         std::cerr << "Real PES IR test FAILED: ZF\n";
         return 33;
     }
@@ -856,43 +855,43 @@ int main(int argc, char** argv) {
     constexpr std::uint32_t oldEbpValue =
         0x55667788u;
 
-    pes17::execution::MachineState loopState(
+    pes17::execution::MachineState loopTestState(
         loopGuestBase,
         0x1000);
 
-    loopState.reg(pes17::ir::Register::EAX) =
+    loopTestState.reg(pes17::ir::Register::EAX) =
         loopEaxValue;
 
-    loopState.reg(pes17::ir::Register::ECX) =
+    loopTestState.reg(pes17::ir::Register::ECX) =
         loopListAddress;
 
-    loopState.reg(pes17::ir::Register::EBP) =
+    loopTestState.reg(pes17::ir::Register::EBP) =
         loopStackAddress;
 
     bool loopMemoryReady = true;
 
     loopMemoryReady &=
-        loopState.memory.write32(
+        loopTestState.memory.write32(
             loopListAddress,
             loopTargetAddress);
 
     loopMemoryReady &=
-        loopState.memory.write32(
+        loopTestState.memory.write32(
             loopListAddress + 4,
             loopAddValue);
 
     loopMemoryReady &=
-        loopState.memory.write32(
+        loopTestState.memory.write32(
             loopListAddress + 8,
             0);
 
     loopMemoryReady &=
-        loopState.memory.write32(
+        loopTestState.memory.write32(
             loopTargetAddress,
             0);
 
     loopMemoryReady &=
-        loopState.memory.write32(
+        loopTestState.memory.write32(
             loopStackAddress,
             oldEbpValue);
 
@@ -904,7 +903,7 @@ int main(int argc, char** argv) {
     }
 
     pes17::execution::FunctionExecutor
-        loopExecutor(loopState);
+        loopExecutor(loopTestState);
 
     const auto loopResult =
         loopExecutor.execute(
@@ -928,7 +927,7 @@ int main(int argc, char** argv) {
     }
 
     const auto loopStoredValue =
-        loopState.memory.read32(
+        loopTestState.memory.read32(
             loopTargetAddress);
 
     if (!loopStoredValue) {
@@ -951,7 +950,7 @@ int main(int argc, char** argv) {
         return 39;
     }
 
-    if (loopState.reg(
+    if (loopTestState.reg(
             pes17::ir::Register::ECX) !=
         loopListAddress + 8) {
 
@@ -961,7 +960,7 @@ int main(int argc, char** argv) {
         return 40;
     }
 
-    if (loopState.reg(
+    if (loopTestState.reg(
             pes17::ir::Register::EBP) !=
         oldEbpValue) {
 
@@ -971,7 +970,7 @@ int main(int argc, char** argv) {
         return 41;
     }
 
-    if (loopState.reg(
+    if (loopTestState.reg(
             pes17::ir::Register::ESP) !=
         loopStackAddress + 4) {
 
@@ -1008,15 +1007,15 @@ int main(int argc, char** argv) {
         << *loopStoredValue
         << '\n'
         << "  ECX final    : 0x"
-        << loopState.reg(
+        << loopTestState.reg(
             pes17::ir::Register::ECX)
         << '\n'
         << "  EBP restored : 0x"
-        << loopState.reg(
+        << loopTestState.reg(
             pes17::ir::Register::EBP)
         << '\n'
         << "  ESP final    : 0x"
-        << loopState.reg(
+        << loopTestState.reg(
             pes17::ir::Register::ESP)
         << '\n'
         << std::dec;
