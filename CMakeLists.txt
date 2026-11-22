@@ -27,9 +27,10 @@ add_executable(pes17_host
     runtime/execution/executor_test.cpp
     runtime/analysis/call_graph_analyzer.cpp
     
-    # OS ARQUIVOS DO WINDOWS AQUI:
+    # ARQUIVOS DA CAMADA WINDOWS (incluindo o bridge novo)
     runtime/win32/win32_stubs.cpp
     runtime/win32/win32_file_stubs.cpp
+    runtime/win32/win32_bridge.cpp
 )
 
 target_include_directories(pes17_host PRIVATE runtime runtime/win32)
@@ -51,6 +52,8 @@ target_link_directories(pes17_host PRIVATE
     ${CAPSTONE_LIBRARY_DIRS}
 )
 
+# Adicionado a biblioteca 'log' para o Win32_Log funcionar no Android
 target_link_libraries(pes17_host PRIVATE
     ${CAPSTONE_LIBRARIES}
+    log
 )
