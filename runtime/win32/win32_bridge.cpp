@@ -1,7 +1,8 @@
 #include "win32_bridge.h"
 
-#include "machine_state.h"
-#include "win32_abi.h"   // adicionar runtime/win32 aos include dirs (target win32_compat já exporta)
+// CORREÇÃO AQUI: Apontando para a pasta execution
+#include "../execution/machine_state.h"
+#include "win32_abi.h"
 
 namespace pes17::execution {
 
