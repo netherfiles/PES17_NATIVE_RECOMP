@@ -207,24 +207,15 @@ bool emitInstruction(
         }
 
         case ir::Opcode::Address: {
-            if (!requireOperands(instruction, 2, error))
-                return false;
-
-            if (instruction.operands[1].kind !=
-                ir::OperandKind::Memory) {
-                error =
-                    "Address source is not memory at 0x" +
-                    hexAddress(instruction.sourceAddress);
+            if (!requireOperands(instruction, 2, error)) return false;
+            if (instruction.operands[1].kind != ir::OperandKind::Memory) {
+                error = "Address source is not memory at 0x" + hexAddress(instruction.sourceAddress);
                 return false;
             }
-
             return emitWrite(
                 out,
                 instruction.operands[0],
-                "static_cast<std::uint32_t>(" +
-                    addressExpr(
-                        instruction.operands[1].memory) +
-                    ")",
+                "static_cast<std::uint32_t>(" + addressExpr(instruction.operands[1].memory) + ")",
                 error);
         }
 
@@ -276,14 +267,12 @@ bool emitInstruction(
             for (const auto successor : block.successors)
                 if (successor != instruction.target) { fallthrough = successor; break; }
             if (!fallthrough) {
-                error = "Conditional branch has no fallthrough at 0x" +
-                    hexAddress(instruction.sourceAddress);
+                error = "Conditional branch has no fallthrough at 0x" + hexAddress(instruction.sourceAddress);
                 return false;
             }
             const char* condition = instruction.opcode == ir::Opcode::BranchIfEqual
                 ? "state.flags.zf" : "!state.flags.zf";
-            out << "        if (" << condition << ") goto "
-                << blockLabel(instruction.target) << ";\n"
+            out << "        if (" << condition << ") goto " << blockLabel(instruction.target) << ";\n"
                 << "        goto " << blockLabel(fallthrough) << ";\n";
             return true;
         }
@@ -311,16 +300,42 @@ bool emitInstruction(
             out << "        return true;\n";
             return true;
 
-        case ir::Opcode::Unsupported:
+        // ====================================================================
+        // AQUI ESTÁ A INTEGRAÇÃO COM O WINDOWS (win32_abi.h)
+        // ====================================================================
         case ir::Opcode::CallDirect:
-        case ir::Opcode::CallIndirect:
+        case ir::Opcode::CallIndirect: {
+            if (!instruction.hasTarget) {
+                error = "Call without target at 0x" + hexAddress(instruction.sourceAddress);
+                return false;
+            }
+            out << "        {\n"
+                << "            GuestCPU cpu;\n"
+                << "            cpu.eax = state.reg(pes17::ir::Register::EAX);\n"
+                << "            cpu.ebx = state.reg(pes17::ir::Register::EBX);\n"
+                << "            cpu.ecx = state.reg(pes17::ir::Register::ECX);\n"
+                << "            cpu.edx = state.reg(pes17::ir::Register::EDX);\n"
+                << "            cpu.esi = state.reg(pes17::ir::Register::ESI);\n"
+                << "            cpu.edi = state.reg(pes17::ir::Register::EDI);\n"
+                << "            cpu.ebp = state.reg(pes17::ir::Register::EBP);\n"
+                << "            cpu.esp = state.reg(pes17::ir::Register::ESP);\n"
+                << "            if (Win32_DispatchThunk(cpu, " << immediateExpr(instruction.target) << ")) {\n"
+                << "                state.reg(pes17::ir::Register::EAX) = cpu.eax;\n"
+                << "                state.reg(pes17::ir::Register::EDX) = cpu.edx;\n"
+                << "                state.reg(pes17::ir::Register::ESP) = cpu.esp;\n"
+                << "            } else {\n"
+                << "                /* TODO: call direct recompiled function at " << hexAddress(instruction.target) << " */\n"
+                << "            }\n"
+                << "        }\n";
+            return true;
+        }
+
+        case ir::Opcode::Unsupported:
+        default:
             error = "Unsupported opcode " + std::string(ir::opcodeName(instruction.opcode)) +
                 " at 0x" + hexAddress(instruction.sourceAddress);
             return false;
     }
-
-    error = "Unknown opcode at 0x" + hexAddress(instruction.sourceAddress);
-    return false;
 }
 
 }  // namespace
@@ -342,7 +357,8 @@ GeneratedCode CppGenerator::generate(
 
     std::ostringstream out;
     out << "#include <cstdint>\n"
-        << "#include \"runtime/execution/machine_state.h\"\n\n"
+        << "#include \"runtime/execution/machine_state.h\"\n"
+        << "#include \"runtime/win32/win32_abi.h\"\n\n"
         << "bool " << functionName
         << "(pes17::execution::MachineState& state) {\n"
         << "    goto " << blockLabel(entry) << ";\n\n";
@@ -358,7 +374,10 @@ GeneratedCode CppGenerator::generate(
         const bool terminates = last.opcode == ir::Opcode::Branch ||
             last.opcode == ir::Opcode::BranchIfEqual ||
             last.opcode == ir::Opcode::BranchIfNotEqual ||
-            last.opcode == ir::Opcode::Return;
+            last.opcode == ir::Opcode::Return ||
+            last.opcode == ir::Opcode::CallDirect ||
+            last.opcode == ir::Opcode::CallIndirect;
+            
         if (!terminates) {
             if (block.successors.size() != 1) {
                 result.error = "Block 0x" + hexAddress(block.start) +
