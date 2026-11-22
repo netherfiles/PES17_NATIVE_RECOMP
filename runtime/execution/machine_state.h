@@ -27,6 +27,20 @@ public:
         return baseAddress_;
     }
 
+    // --- INÍCIO DA CORREÇÃO (métodos que o win32_bridge.cpp precisa) ---
+    std::uint32_t base() const {
+        return baseAddress_;
+    }
+
+    std::uint8_t* data() {
+        return data_.data();
+    }
+
+    const std::uint8_t* data() const {
+        return data_.data();
+    }
+    // --- FIM DA CORREÇÃO ---
+
     std::size_t size() const {
         return data_.size();
     }
@@ -71,4 +85,4 @@ private:
     std::array<std::uint32_t, 9> registers_{};
 };
 
-}
+} // namespace pes17::execution
