@@ -13,6 +13,11 @@
 #include "analysis/function_normalizer.h"
 #include "ir/x86_lifter.h"
 #include "ir/verifier.h"
+
+// INCLUINDO OS ARQUIVOS QUE ESTAVAM FALTANDO:
+#include "execution/machine_state.h"
+#include "execution/executor.h"
+
 #include "execution/machine_state_test.h"
 #include "execution/executor_test.h"
 #include "execution/function_executor_test.h"
@@ -118,7 +123,6 @@ int main(int argc, char** argv) {
     std::cout << "\nTarget machine: x86/i386 confirmed\n";
     std::cout << "PE32 target accepted for recomp analysis\n";
 
-
     std::cout << "\nEntry point analysis:\n";
 
     const auto epRva = pe.entryPointRva();
@@ -159,7 +163,6 @@ int main(int argc, char** argv) {
     std::cout << std::setfill(' ')
               << std::dec
               << '\n';
-
 
     std::cout << "\nEntry point disassembly:\n";
 
@@ -221,7 +224,6 @@ int main(int argc, char** argv) {
     }
 
     std::cout << std::right << std::dec;
-
 
     std::cout << "\nBasic block analysis:\n";
 
@@ -286,7 +288,6 @@ int main(int argc, char** argv) {
     }
 
     std::cout << std::dec;
-
 
     std::cout << "\nFunction analysis:\n";
 
@@ -353,7 +354,6 @@ int main(int argc, char** argv) {
     }
 
     std::cout << std::dec;
-
 
     std::cout << "\nCall graph analysis:\n";
 
@@ -471,7 +471,6 @@ int main(int argc, char** argv) {
             << " x " << reason << '\n';
     }
 
-
     constexpr std::uint64_t candidateAddress =
         0x047d5000ULL;
 
@@ -550,7 +549,6 @@ int main(int argc, char** argv) {
     }
 
     std::cout << std::right << std::dec;
-
 
     std::cout << "\nNormalized function analysis:\n";
 
@@ -654,7 +652,6 @@ int main(int argc, char** argv) {
         << '\n';
 
     std::cout << std::right << std::dec;
-
 
     std::cout << "\nFirst IR lift:\n";
 
@@ -764,8 +761,6 @@ int main(int argc, char** argv) {
 
     std::cout << std::right << std::dec;
 
-
-
     std::cout << "\nReal PES IR test:\n";
 
     constexpr std::uint64_t realBlockAddress = 0x047d5024ULL;
@@ -838,7 +833,6 @@ int main(int argc, char** argv) {
         << std::dec
         << realResult.instructionsExecuted
         << '\n';
-
 
     std::cout << "\nReal PES loop test:\n";
 
@@ -1027,7 +1021,6 @@ int main(int argc, char** argv) {
         << '\n'
         << std::dec;
 
-
     std::cout << "\nC++ codegen test:\n";
 
     pes17::codegen::CppGenerator cppGenerator;
@@ -1101,5 +1094,3 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-
-
