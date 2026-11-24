@@ -64,8 +64,9 @@ std::string addressExpr(const ir::MemoryOperand& memory) {
 }
 
 bool validOperand(const ir::Operand& operand, std::string& error) {
-    if (operand.width != 0 && operand.width != 32) {
-        error = "Only 32-bit operands are supported";
+    // AGORA SUPORTA 8, 16 E 32 BITS
+    if (operand.width != 0 && operand.width != 8 && operand.width != 16 && operand.width != 32) {
+        error = "Unsupported operand width";
         return false;
     }
     if (operand.kind == ir::OperandKind::Register && regExpr(operand.reg).empty()) {
@@ -246,6 +247,18 @@ bool emitInstruction(
                 << "        state.flags.sf = (value_" << suffix << " & 0x80000000u) != 0;\n";
             if (instruction.opcode != ir::Opcode::Compare)
                 return emitWrite(out, instruction.operands[0], "value_" + suffix, error);
+            return true;
+        }
+
+        case ir::Opcode::Test: {
+            if (!requireOperands(instruction, 2, error)) return false;
+            if (!emitRead(out, instruction.operands[0], "lhs_" + suffix, error)) return false;
+            if (!emitRead(out, instruction.operands[1], "rhs_" + suffix, error)) return false;
+            out << "        const std::uint32_t value_" << suffix << " = lhs_" << suffix << " & rhs_" << suffix << ";\n";
+            out << "        state.flags.zf = value_" << suffix << " == 0;\n"
+                << "        state.flags.cf = false;\n"
+                << "        state.flags.of = false;\n"
+                << "        state.flags.sf = (value_" << suffix << " & 0x80000000u) != 0;\n";
             return true;
         }
 
