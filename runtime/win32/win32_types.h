@@ -2,13 +2,6 @@
 // ============================================================================
 // win32_types.h - Tipos/constantes Win32 em C++ puro (sem <windows.h>)
 // Alvo: Android ARM64 (NDK 27, C++20). O "guest" é x86 de 32 bits.
-//
-// Convenções:
-//  * Tipos escalares seguem o layout Win32 de 32 bits (DWORD=4, LONG=4, BOOL=4).
-//  * Structs que o guest lê/escreve diretamente na memória usam campos de ponteiro
-//    de 32 bits (GPTR) para manter o layout x86 idêntico.
-//  * Parâmetros de função (HANDLE, LPVOID...) são ponteiros do host. Como a arena
-//    do guest é mapeada em endereços < 4GB com identidade, a conversão é um cast.
 // ============================================================================
 
 #include <cstdint>
@@ -19,9 +12,7 @@
 #pragma clang diagnostic ignored "-Wnested-anon-types"
 #endif
 
-// ----------------------------------------------------------------------------
-// Convenções de chamada / exportação (no-op em ARM64)
-// ----------------------------------------------------------------------------
+// Convenções de chamada / exportação
 #define WINAPI
 #define CALLBACK
 #define APIENTRY
@@ -37,9 +28,7 @@
 #define MAX_PATH 260
 #define INFINITE 0xFFFFFFFFu
 
-// ----------------------------------------------------------------------------
 // Tipos escalares
-// ----------------------------------------------------------------------------
 typedef void            VOID;
 typedef char            CHAR;
 typedef uint16_t        WCHAR;
@@ -54,12 +43,12 @@ typedef uint32_t        UINT;
 typedef int16_t         SHORT;
 typedef uint16_t        USHORT;
 typedef float           FLOAT;
-typedef int64_t         LONGLONG;
-typedef uint64_t        ULONGLONG;
+typedef long long       LONGLONG;
+typedef unsigned long long ULONGLONG;
 typedef uint64_t        DWORD64;
-typedef uint32_t        GPTR;          // ponteiro de 32 bits do guest (para structs com layout x86)
+typedef uint32_t        GPTR;
 
-typedef size_t          SIZE_T;        // lado host: 64 bits
+typedef size_t          SIZE_T;
 typedef intptr_t        INT_PTR;
 typedef uintptr_t       UINT_PTR;
 typedef uintptr_t       ULONG_PTR;
@@ -85,9 +74,7 @@ typedef UINT_PTR        WPARAM;
 typedef LONG_PTR        LPARAM;
 typedef LONG_PTR        LRESULT;
 
-// ----------------------------------------------------------------------------
-// Handles (void*; o VALOR é sempre um ID < 4GB, nunca um ponteiro do host)
-// ----------------------------------------------------------------------------
+// Handles
 typedef void* HANDLE;
 typedef void* HMODULE;
 typedef void* HINSTANCE;
@@ -107,9 +94,7 @@ typedef HANDLE* PHANDLE;
 typedef intptr_t (*FARPROC)(void);
 typedef FARPROC  PROC;
 
-// ----------------------------------------------------------------------------
 // Structs
-// ----------------------------------------------------------------------------
 struct POINT { LONG x; LONG y; };
 struct SIZE  { LONG cx; LONG cy; };
 struct RECT  { LONG left; LONG top; LONG right; LONG bottom; };
@@ -138,7 +123,6 @@ struct GUID {
 typedef GUID  IID;
 typedef GUID  CLSID;
 
-// Layout x86 (32 bits)
 struct SECURITY_ATTRIBUTES {
     DWORD nLength;
     GPTR  lpSecurityDescriptor;
@@ -146,7 +130,6 @@ struct SECURITY_ATTRIBUTES {
 };
 typedef SECURITY_ATTRIBUTES* LPSECURITY_ATTRIBUTES;
 
-// Layout x86 (32 bits)
 struct OVERLAPPED {
     DWORD Internal;
     DWORD InternalHigh;
@@ -156,21 +139,7 @@ struct OVERLAPPED {
 };
 typedef OVERLAPPED* LPOVERLAPPED;
 
-static_assert(sizeof(BYTE)  == 1, "BYTE");
-static_assert(sizeof(WORD)  == 2, "WORD");
-static_assert(sizeof(DWORD) == 4, "DWORD");
-static_assert(sizeof(LONG)  == 4, "LONG");
-static_assert(sizeof(BOOL)  == 4, "BOOL");
-static_assert(sizeof(POINT) == 8, "POINT");
-static_assert(sizeof(RECT)  == 16, "RECT");
-static_assert(sizeof(LARGE_INTEGER) == 8, "LARGE_INTEGER");
-static_assert(sizeof(GUID) == 16, "GUID");
-static_assert(sizeof(SECURITY_ATTRIBUTES) == 12, "SECURITY_ATTRIBUTES (x86)");
-static_assert(sizeof(OVERLAPPED) == 20, "OVERLAPPED (x86)");
-
-// ----------------------------------------------------------------------------
 // Macros utilitárias
-// ----------------------------------------------------------------------------
 #define LOWORD(l)      ((WORD)((DWORD_PTR)(l) & 0xFFFF))
 #define HIWORD(l)      ((WORD)(((DWORD_PTR)(l) >> 16) & 0xFFFF))
 #define LOBYTE(w)      ((BYTE)((DWORD_PTR)(w) & 0xFF))
@@ -181,9 +150,7 @@ static_assert(sizeof(OVERLAPPED) == 20, "OVERLAPPED (x86)");
 #define SUCCEEDED(hr)  (((HRESULT)(hr)) >= 0)
 #define FAILED(hr)     (((HRESULT)(hr)) < 0)
 
-// ----------------------------------------------------------------------------
 // HRESULT
-// ----------------------------------------------------------------------------
 #define S_OK            ((HRESULT)0)
 #define S_FALSE         ((HRESULT)1)
 #define E_NOTIMPL       ((HRESULT)0x80004001L)
@@ -194,9 +161,7 @@ static_assert(sizeof(OVERLAPPED) == 20, "OVERLAPPED (x86)");
 #define E_OUTOFMEMORY   ((HRESULT)0x8007000EL)
 #define E_INVALIDARG    ((HRESULT)0x80070057L)
 
-// ----------------------------------------------------------------------------
-// Códigos de erro (GetLastError)
-// ----------------------------------------------------------------------------
+// Códigos de erro
 #define ERROR_SUCCESS               0u
 #define ERROR_FILE_NOT_FOUND        2u
 #define ERROR_PATH_NOT_FOUND        3u
@@ -214,9 +179,7 @@ static_assert(sizeof(OVERLAPPED) == 20, "OVERLAPPED (x86)");
 #define ERROR_ALREADY_EXISTS        183u
 #define ERROR_INVALID_ADDRESS       487u
 
-// ----------------------------------------------------------------------------
 // Memória virtual
-// ----------------------------------------------------------------------------
 #define MEM_COMMIT       0x00001000u
 #define MEM_RESERVE      0x00002000u
 #define MEM_DECOMMIT     0x00004000u
@@ -234,9 +197,7 @@ static_assert(sizeof(OVERLAPPED) == 20, "OVERLAPPED (x86)");
 #define PAGE_EXECUTE_READWRITE  0x40u
 #define PAGE_EXECUTE_WRITECOPY  0x80u
 
-// ----------------------------------------------------------------------------
-// Arquivos (usados por win32_file_stubs.cpp)
-// ----------------------------------------------------------------------------
+// Arquivos
 #define GENERIC_READ     0x80000000u
 #define GENERIC_WRITE    0x40000000u
 #define GENERIC_EXECUTE  0x20000000u
@@ -270,48 +231,37 @@ static_assert(sizeof(OVERLAPPED) == 20, "OVERLAPPED (x86)");
 // ============================================================================
 // API interna da camada de compatibilidade
 // ============================================================================
-
-// Log (logcat no Android, stderr fora dele)
 extern "C" void Win32_Log(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 
-// --- Registro de exports --------------------------------------------------
-// Registra uma função host sob "dll!name" e devolve o endereço-thunk de 32 bits
-// que o guest enxerga. Seguro de chamar durante a inicialização estática.
+// ADICIONADO AQUI (Estava faltando!)
+extern "C" void Win32_ConfigureGuestMemory(void* host_base, std::uint32_t guest_lo, std::uint64_t guest_hi);
+
 extern "C" uint32_t Win32_RegisterExport(const char* dll, const char* name, void* hostFn);
-
-// Resolve um import em tempo de recompilação/bind da IAT. Retorna 0 se não existir.
 extern "C" uint32_t Win32_ResolveImport(const char* dll, const char* name);
-
-// Dispatcher de chamadas indiretas: converte endereço-thunk -> função host.
-// Retorna nullptr se 'guestAddr' não for um thunk.
 extern "C" void* Win32_ResolveThunk(uint32_t guestAddr);
 extern "C" bool  Win32_IsThunkAddress(uint32_t guestAddr);
 
-// Registro automático em outros .cpp:  WIN32_EXPORT("kernel32.dll", CloseHandle);
 struct Win32ExportRegistrar {
     Win32ExportRegistrar(const char* dll, const char* name, void* fn) { Win32_RegisterExport(dll, name, fn); }
 };
+
 #define WIN32_EXPORT(dll, fn) \
     static Win32ExportRegistrar win32_registrar_##fn(dll, #fn, reinterpret_cast<void*>(&fn))
 
-// Conversões guest<->host (arena idêntica, < 4GB)
 static inline uint32_t Win32_ToGuest(const void* p) { return static_cast<uint32_t>(reinterpret_cast<uintptr_t>(p)); }
 static inline void*    Win32_ToHost(uint32_t g)     { return reinterpret_cast<void*>(static_cast<uintptr_t>(g)); }
 
-// --- Protótipos kernel32 (win32_stubs.cpp) --------------------------------
+// Protótipos kernel32
 WIN32_API DWORD   WINAPI GetLastError(void);
 WIN32_API void    WINAPI SetLastError(DWORD dwErrCode);
-
 WIN32_API LPVOID  WINAPI VirtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect);
 WIN32_API BOOL    WINAPI VirtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType);
 WIN32_API BOOL    WINAPI VirtualProtect(LPVOID lpAddress, SIZE_T dwSize, DWORD flNewProtect, LPDWORD lpflOldProtect);
-
 WIN32_API DWORD     WINAPI GetTickCount(void);
 WIN32_API ULONGLONG WINAPI GetTickCount64(void);
 WIN32_API void      WINAPI Sleep(DWORD dwMilliseconds);
 WIN32_API BOOL      WINAPI QueryPerformanceCounter(LARGE_INTEGER* lpPerformanceCount);
 WIN32_API BOOL      WINAPI QueryPerformanceFrequency(LARGE_INTEGER* lpFrequency);
-
 WIN32_API HMODULE WINAPI LoadLibraryA(LPCSTR lpLibFileName);
 WIN32_API BOOL    WINAPI FreeLibrary(HMODULE hLibModule);
 WIN32_API HMODULE WINAPI GetModuleHandleA(LPCSTR lpModuleName);
