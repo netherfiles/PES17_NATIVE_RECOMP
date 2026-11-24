@@ -249,9 +249,25 @@ bool emitInstruction(
             return true;
         }
 
-        // ====================================================================
-        // AQUI ESTÃO AS INSTRUÇÕES NOVAS QUE ESTAVAM BLOQUEANDO O JOGO
-        // ====================================================================
+        case ir::Opcode::Increment: {
+            if (!requireOperands(instruction, 1, error)) return false;
+            if (!emitRead(out, instruction.operands[0], "lhs_" + suffix, error)) return false;
+            out << "        const std::uint32_t value_" << suffix << " = lhs_" << suffix << " + 1u;\n"
+                << "        state.flags.zf = value_" << suffix << " == 0;\n"
+                << "        state.flags.sf = (value_" << suffix << " & 0x80000000u) != 0;\n";
+            return emitWrite(out, instruction.operands[0], "value_" + suffix, error);
+        }
+
+        case ir::Opcode::SubtractWithBorrow: {
+            if (!requireOperands(instruction, 2, error)) return false;
+            if (!emitRead(out, instruction.operands[0], "lhs_" + suffix, error)) return false;
+            if (!emitRead(out, instruction.operands[1], "rhs_" + suffix, error)) return false;
+            out << "        const std::uint32_t value_" << suffix << " = lhs_" << suffix << " - rhs_" << suffix << " - (state.flags.cf ? 1u : 0u);\n"
+                << "        state.flags.zf = value_" << suffix << " == 0;\n"
+                << "        state.flags.sf = (value_" << suffix << " & 0x80000000u) != 0;\n";
+            return emitWrite(out, instruction.operands[0], "value_" + suffix, error);
+        }
+
         case ir::Opcode::Xor: {
             if (!requireOperands(instruction, 2, error)) return false;
             if (!emitRead(out, instruction.operands[0], "lhs_" + suffix, error)) return false;
@@ -333,7 +349,6 @@ bool emitInstruction(
         case ir::Opcode::CallDirect:
         case ir::Opcode::CallIndirect: {
             if (!instruction.hasTarget) {
-                // Não bloqueia o build se for uma chamada indireta sem alvo resolvido
                 out << "        // TODO: Call without target at 0x" << hexAddress(instruction.sourceAddress) << "\n";
                 return true;
             }
