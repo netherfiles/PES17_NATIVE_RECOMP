@@ -1,186 +1,268 @@
 #pragma once
 // ============================================================================
-// win32_abi.h - Ponte ABI: pilha do guest x86 (stdcall/cdecl) -> funções C++ host
-//
-// Um "thunk" é uma função  void(GuestCPU&)  gerada por template a partir da
-// ASSINATURA da função stub. Ele:
-//   1. lê os argumentos da pilha do guest (esp+4, esp+8, ...),
-//   2. converte cada um para o tipo host correto (ponteiro, int, 64 bits, float),
-//   3. chama o stub,
-//   4. escreve o retorno em eax (ou edx:eax),
-//   5. emula o 'ret' / 'ret N' ajustando esp.
-//
-// Pré-requisito do recompilador: o estado do guest vive numa struct de CPU com
-// registradores de 32 bits e a PILHA É REAL (pushes escrevem na memória do guest,
-// esp é mantido). Sem isso não há de onde ler os argumentos.
+// win32_types.h - Tipos/constantes Win32 em C++ puro (sem <windows.h>)
+// Alvo: Android ARM64 (NDK 27, C++20). O "guest" é x86 de 32 bits.
 // ============================================================================
 
-#include "win32_types.h"
+#include <cstdint>
+#include <cstddef>
 
-#include <array>
-#include <bit>
-#include <cstring>
-#include <type_traits>
-#include <utility>
-
-// 1 = o 'call' do guest empurra o endereço de retorno antes de entrar no thunk
-//     (args começam em esp+4).  0 = o recompilador usa call C++ puro, sem push
-//     de retorno (args começam em esp+0).
-#ifndef WIN32_GUEST_CALL_PUSHES_RETADDR
-#define WIN32_GUEST_CALL_PUSHES_RETADDR 1
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
+#pragma clang diagnostic ignored "-Wnested-anon-types"
 #endif
 
-// Se o seu motor já tem uma struct de contexto, defina WIN32_ABI_CUSTOM_CPU e faça
-// `using GuestCPU = SeuContexto;` ANTES de incluir este header. Campos exigidos:
-// uint32_t eax, edx, esp.
-#ifndef WIN32_ABI_CUSTOM_CPU
-struct GuestCPU {
-    uint32_t eax = 0, ecx = 0, edx = 0, ebx = 0;
-    uint32_t esp = 0, ebp = 0, esi = 0, edi = 0;
-};
+// Convenções de chamada / exportação
+#define WINAPI
+#define CALLBACK
+#define APIENTRY
+#define STDMETHODCALLTYPE
+#define CDECL
+#define WIN32_API extern "C" __attribute__((visibility("default")))
+
+#ifndef NULL
+#define NULL nullptr
 #endif
+#define TRUE  1
+#define FALSE 0
+#define MAX_PATH 260
+#define INFINITE 0xFFFFFFFFu
 
-typedef void (*GuestThunkFn)(GuestCPU&);
+// Tipos escalares
+typedef void            VOID;
+typedef char            CHAR;
+typedef uint16_t        WCHAR;
+typedef uint8_t         BYTE;
+typedef uint16_t        WORD;
+typedef uint32_t        DWORD;
+typedef int32_t         LONG;
+typedef uint32_t        ULONG;
+typedef int32_t         BOOL;
+typedef int32_t         INT;
+typedef uint32_t        UINT;
+typedef int16_t         SHORT;
+typedef uint16_t        USHORT;
+typedef float           FLOAT;
+typedef long long       LONGLONG;
+typedef unsigned long long ULONGLONG;
+typedef uint64_t        DWORD64;
+typedef uint32_t        GPTR;
 
-namespace win32abi {
+typedef size_t          SIZE_T;
+typedef intptr_t        INT_PTR;
+typedef uintptr_t       UINT_PTR;
+typedef uintptr_t       ULONG_PTR;
+typedef uintptr_t       DWORD_PTR;
+typedef intptr_t        LONG_PTR;
 
-// Leitura de 32 bits da memória do guest (arena idêntica => endereço == ponteiro host)
-inline uint32_t ReadU32(uint32_t guestAddr) {
-    uint32_t v;
-    std::memcpy(&v, reinterpret_cast<const void*>(static_cast<uintptr_t>(guestAddr)), sizeof(v));
-    return v;
-}
+typedef BYTE*           LPBYTE;
+typedef DWORD*          LPDWORD;
+typedef LONG*           PLONG;
+typedef BOOL*           LPBOOL;
+typedef void*           PVOID;
+typedef void*           LPVOID;
+typedef const void*     LPCVOID;
+typedef char*           LPSTR;
+typedef const char*     LPCSTR;
+typedef WCHAR*          LPWSTR;
+typedef const WCHAR*    LPCWSTR;
 
-// Tipos de 64 bits ocupam 2 slots de pilha (low, high). 'long long' é de propósito
-// distinto de size_t/uintptr_t (que são 'unsigned long' no LP64 e ocupam 1 slot).
-template <typename T>
-inline constexpr bool kIsWide = std::is_same_v<T, long long> ||
-                                std::is_same_v<T, unsigned long long> ||
-                                std::is_same_v<T, double>;
+typedef int32_t         HRESULT;
+typedef DWORD           LCID;
+typedef WORD            ATOM;
+typedef UINT_PTR        WPARAM;
+typedef LONG_PTR        LPARAM;
+typedef LONG_PTR        LRESULT;
 
-template <typename T>
-inline constexpr uint32_t kSlots = kIsWide<T> ? 2u : 1u;
+// Handles
+typedef void* HANDLE;
+typedef void* HMODULE;
+typedef void* HINSTANCE;
+typedef void* HWND;
+typedef void* HDC;
+typedef void* HMENU;
+typedef void* HICON;
+typedef void* HCURSOR;
+typedef void* HBRUSH;
+typedef void* HMONITOR;
+typedef void* HGLOBAL;
+typedef void* HLOCAL;
+typedef HANDLE* PHANDLE;
 
-// Offsets (em slots de 4 bytes) de cada argumento; o último elemento = total de slots.
-template <typename... A>
-constexpr std::array<uint32_t, sizeof...(A) + 1> MakeOffsets() {
-    std::array<uint32_t, sizeof...(A) + 1> a{};
-    const uint32_t s[sizeof...(A) + 1] = { kSlots<A>..., 0u };
-    uint32_t o = 0;
-    for (size_t i = 0; i < sizeof...(A); ++i) { a[i] = o; o += s[i]; }
-    a[sizeof...(A)] = o;
-    return a;
-}
+#define INVALID_HANDLE_VALUE ((HANDLE)(intptr_t)-1)
 
-// Slot(s) da pilha -> tipo host
-template <typename T>
-inline T FromStack(uint32_t addr) {
-    using U = std::remove_cv_t<T>;
-    static_assert(!std::is_class_v<U> && !std::is_union_v<U>, "struct por valor nao suportada");
-    if constexpr (std::is_same_v<U, double>) {
-        const uint64_t v = ReadU32(addr) | (static_cast<uint64_t>(ReadU32(addr + 4)) << 32);
-        return std::bit_cast<double>(v);
-    } else if constexpr (std::is_same_v<U, float>) {
-        return std::bit_cast<float>(ReadU32(addr));
-    } else if constexpr (std::is_pointer_v<U>) {
-        const uint32_t v = ReadU32(addr);
-        // 0xFFFFFFFF = INVALID_HANDLE_VALUE do guest -> (HANDLE)-1 do host (como o Win64 faz)
-        if (v == 0xFFFFFFFFu) return reinterpret_cast<U>(static_cast<intptr_t>(-1));
-        return reinterpret_cast<U>(static_cast<uintptr_t>(v));
-    } else if constexpr (kIsWide<U>) {
-        const uint64_t v = ReadU32(addr) | (static_cast<uint64_t>(ReadU32(addr + 4)) << 32);
-        return static_cast<U>(v);
-    } else if constexpr (std::is_integral_v<U> || std::is_enum_v<U>) {
-        if constexpr (std::is_signed_v<U>) return static_cast<U>(static_cast<int32_t>(ReadU32(addr))); // estende sinal
-        else                               return static_cast<U>(ReadU32(addr));                       // estende zero
-    } else {
-        static_assert(sizeof(U) == 0, "tipo de argumento nao suportado");
-    }
-}
+typedef intptr_t (*FARPROC)(void);
+typedef FARPROC  PROC;
 
-// Retorno host -> registradores do guest
-template <typename R>
-inline void SetReturn(GuestCPU& cpu, R v) {
-    if constexpr (std::is_pointer_v<R>) {
-        const uint64_t p = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(v));
-        if ((p >> 32) != 0 && p != ~0ull)
-            Win32_Log("ABI: ponteiro host %p nao cabe em 32 bits (fora da arena?)", reinterpret_cast<const void*>(v));
-        cpu.eax = static_cast<uint32_t>(p);          // -1 -> 0xFFFFFFFF (INVALID_HANDLE_VALUE)
-    } else if constexpr (std::is_floating_point_v<R>) {
-        static_assert(sizeof(R) == 0, "retorno float/double (x87 st0) nao suportado");
-    } else if constexpr (kIsWide<R>) {
-        const uint64_t u = static_cast<uint64_t>(v);
-        cpu.eax = static_cast<uint32_t>(u);
-        cpu.edx = static_cast<uint32_t>(u >> 32);    // 64 bits => edx:eax
-    } else if constexpr (std::is_integral_v<R> || std::is_enum_v<R>) {
-        cpu.eax = static_cast<uint32_t>(v);
-    } else {
-        static_assert(sizeof(R) == 0, "tipo de retorno nao suportado");
-    }
-}
+// Structs
+struct POINT { LONG x; LONG y; };
+struct SIZE  { LONG cx; LONG cy; };
+struct RECT  { LONG left; LONG top; LONG right; LONG bottom; };
+typedef POINT* LPPOINT;
+typedef RECT*  LPRECT;
 
-} // namespace win32abi
+struct FILETIME { DWORD dwLowDateTime; DWORD dwHighDateTime; };
 
-// ----------------------------------------------------------------------------
-// GuestThunk<&funcao, CalleePops>::Invoke(cpu)
-//   CalleePops = true  -> stdcall (callee limpa args: 'ret N')   [Win32 API]
-//   CalleePops = false -> cdecl   (caller limpa; callee só faz 'ret')
-// ----------------------------------------------------------------------------
-template <auto Fn, bool CalleePops>
-struct GuestThunk;
+union LARGE_INTEGER {
+    struct { DWORD LowPart; LONG HighPart; };
+    LONGLONG QuadPart;
+};
+typedef LARGE_INTEGER* PLARGE_INTEGER;
 
-template <typename R, typename... Args, R (*Fn)(Args...), bool CalleePops>
-struct GuestThunk<Fn, CalleePops> {
-    static constexpr auto     kOffs     = win32abi::MakeOffsets<Args...>();
-    static constexpr uint32_t kArgSlots = kOffs[sizeof...(Args)];
-    static constexpr uint32_t kRetBytes = WIN32_GUEST_CALL_PUSHES_RETADDR ? 4u : 0u;
-
-    static void Invoke(GuestCPU& cpu) {
-        Run(cpu, cpu.esp + kRetBytes, std::index_sequence_for<Args...>{});
-        cpu.esp += kRetBytes + (CalleePops ? 4u * kArgSlots : 0u);   // emula ret / ret N
-    }
-
-private:
-    template <size_t... I>
-    static void Run([[maybe_unused]] GuestCPU& cpu, [[maybe_unused]] uint32_t argBase,
-                    std::index_sequence<I...>) {
-        if constexpr (std::is_void_v<R>)
-            Fn(win32abi::FromStack<Args>(argBase + 4u * kOffs[I])...);
-        else
-            win32abi::SetReturn(cpu, Fn(win32abi::FromStack<Args>(argBase + 4u * kOffs[I])...));
-    }
+union ULARGE_INTEGER {
+    struct { DWORD LowPart; DWORD HighPart; };
+    ULONGLONG QuadPart;
 };
 
-// Registra o thunk no registry de exports (GetProcAddress / Win32_ResolveImport).
-#define WIN32_STDCALL_EXPORT(dll, fn) \
-    static Win32ExportRegistrar win32_registrar_##fn(dll, #fn, \
-        reinterpret_cast<void*>(static_cast<GuestThunkFn>(&GuestThunk<&fn, true>::Invoke)))
+struct GUID {
+    uint32_t Data1;
+    uint16_t Data2;
+    uint16_t Data3;
+    uint8_t  Data4[8];
+};
+typedef GUID  IID;
+typedef GUID  CLSID;
 
-#define WIN32_CDECL_EXPORT(dll, fn) \
-    static Win32ExportRegistrar win32_registrar_##fn(dll, #fn, \
-        reinterpret_cast<void*>(static_cast<GuestThunkFn>(&GuestThunk<&fn, false>::Invoke)))
+struct SECURITY_ATTRIBUTES {
+    DWORD nLength;
+    GPTR  lpSecurityDescriptor;
+    BOOL  bInheritHandle;
+};
+typedef SECURITY_ATTRIBUTES* LPSECURITY_ATTRIBUTES;
 
-// Chamada estática (o gerador de código já sabe qual import é):
-//   WIN32_CALL_STDCALL(cpu, CreateFileA);
-#define WIN32_CALL_STDCALL(cpu, fn) GuestThunk<&fn, true>::Invoke(cpu)
-#define WIN32_CALL_CDECL(cpu, fn)   GuestThunk<&fn, false>::Invoke(cpu)
+struct OVERLAPPED {
+    DWORD Internal;
+    DWORD InternalHigh;
+    DWORD Offset;
+    DWORD OffsetHigh;
+    GPTR  hEvent;
+};
+typedef OVERLAPPED* LPOVERLAPPED;
 
-// Chamada dinâmica (call [reg]/call [IAT] com alvo só conhecido em runtime).
-// Retorna false se 'guestTarget' não for um thunk (=> é código recompilado do jogo).
-inline bool Win32_DispatchThunk(GuestCPU& cpu, uint32_t guestTarget) {
-    auto fn = reinterpret_cast<GuestThunkFn>(Win32_ResolveThunk(guestTarget));
-    if (!fn) return false;
-    fn(cpu);
-    return true;
-}
+// Macros utilitárias
+#define LOWORD(l)      ((WORD)((DWORD_PTR)(l) & 0xFFFF))
+#define HIWORD(l)      ((WORD)(((DWORD_PTR)(l) >> 16) & 0xFFFF))
+#define LOBYTE(w)      ((BYTE)((DWORD_PTR)(w) & 0xFF))
+#define HIBYTE(w)      ((BYTE)(((DWORD_PTR)(w) >> 8) & 0xFF))
+#define MAKEWORD(a, b) ((WORD)(((BYTE)(a)) | ((WORD)((BYTE)(b))) << 8))
+#define MAKELONG(a, b) ((LONG)(((WORD)(a)) | ((DWORD)((WORD)(b))) << 16))
 
-// ----------------------------------------------------------------------------
-// Configuração do sistema de arquivos (chame na inicialização, ex.: via JNI)
-// ----------------------------------------------------------------------------
-// Diretório Android que corresponde a C:\Games\PES2017  (padrão: /storage/emulated/0/PES2017)
-extern "C" void Win32_SetAndroidRoot(const char* absDir);
-// Mapeia um prefixo Windows qualquer para um diretório Android. Prefixos mais longos vencem.
-//   Win32_AddPathMount("C:\\Users\\Player\\Documents\\KONAMI", "/data/data/<pkg>/files/save");
-extern "C" void Win32_AddPathMount(const char* winPrefix, const char* androidDir);
-// Apenas para depuração/testes. Retorna false se 'out' for pequeno demais.
-extern "C" bool Win32_TranslatePath(const char* winPath, char* out, size_t outSize);
+#define SUCCEEDED(hr)  (((HRESULT)(hr)) >= 0)
+#define FAILED(hr)     (((HRESULT)(hr)) < 0)
+
+// HRESULT
+#define S_OK            ((HRESULT)0)
+#define S_FALSE         ((HRESULT)1)
+#define E_NOTIMPL       ((HRESULT)0x80004001L)
+#define E_NOINTERFACE   ((HRESULT)0x80004002L)
+#define E_POINTER       ((HRESULT)0x80004003L)
+#define E_ABORT         ((HRESULT)0x80004004L)
+#define E_FAIL          ((HRESULT)0x80004005L)
+#define E_OUTOFMEMORY   ((HRESULT)0x8007000EL)
+#define E_INVALIDARG    ((HRESULT)0x80070057L)
+
+// Códigos de erro
+#define ERROR_SUCCESS               0u
+#define ERROR_FILE_NOT_FOUND        2u
+#define ERROR_PATH_NOT_FOUND        3u
+#define ERROR_TOO_MANY_OPEN_FILES   4u
+#define ERROR_ACCESS_DENIED         5u
+#define ERROR_INVALID_HANDLE        6u
+#define ERROR_NOT_ENOUGH_MEMORY     8u
+#define ERROR_INVALID_DATA          13u
+#define ERROR_OUTOFMEMORY           14u
+#define ERROR_HANDLE_EOF            38u
+#define ERROR_FILE_EXISTS           80u
+#define ERROR_INVALID_PARAMETER     87u
+#define ERROR_MOD_NOT_FOUND         126u
+#define ERROR_PROC_NOT_FOUND        127u
+#define ERROR_ALREADY_EXISTS        183u
+#define ERROR_INVALID_ADDRESS       487u
+
+// Memória virtual
+#define MEM_COMMIT       0x00001000u
+#define MEM_RESERVE      0x00002000u
+#define MEM_DECOMMIT     0x00004000u
+#define MEM_RELEASE      0x00008000u
+#define MEM_FREE         0x00010000u
+#define MEM_RESET        0x00080000u
+#define MEM_TOP_DOWN     0x00100000u
+
+#define PAGE_NOACCESS           0x01u
+#define PAGE_READONLY           0x02u
+#define PAGE_READWRITE          0x04u
+#define PAGE_WRITECOPY          0x08u
+#define PAGE_EXECUTE            0x10u
+#define PAGE_EXECUTE_READ       0x20u
+#define PAGE_EXECUTE_READWRITE  0x40u
+#define PAGE_EXECUTE_WRITECOPY  0x80u
+
+// Arquivos
+#define GENERIC_READ     0x80000000u
+#define GENERIC_WRITE    0x40000000u
+#define GENERIC_EXECUTE  0x20000000u
+#define GENERIC_ALL      0x10000000u
+
+#define FILE_SHARE_READ    0x00000001u
+#define FILE_SHARE_WRITE   0x00000002u
+#define FILE_SHARE_DELETE  0x00000004u
+
+#define CREATE_NEW         1u
+#define CREATE_ALWAYS      2u
+#define OPEN_EXISTING      3u
+#define OPEN_ALWAYS        4u
+#define TRUNCATE_EXISTING  5u
+
+#define FILE_ATTRIBUTE_READONLY   0x00000001u
+#define FILE_ATTRIBUTE_DIRECTORY  0x00000010u
+#define FILE_ATTRIBUTE_NORMAL     0x00000080u
+#define FILE_FLAG_OVERLAPPED      0x40000000u
+#define FILE_FLAG_SEQUENTIAL_SCAN 0x08000000u
+#define FILE_FLAG_RANDOM_ACCESS   0x10000000u
+
+#define FILE_BEGIN    0u
+#define FILE_CURRENT  1u
+#define FILE_END      2u
+
+#define INVALID_SET_FILE_POINTER 0xFFFFFFFFu
+#define INVALID_FILE_SIZE        0xFFFFFFFFu
+#define INVALID_FILE_ATTRIBUTES  0xFFFFFFFFu
+
+// ============================================================================
+// API interna da camada de compatibilidade
+// ============================================================================
+extern "C" void Win32_Log(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
+
+// ADICIONADO AQUI (Estava faltando!)
+extern "C" void Win32_ConfigureGuestMemory(void* host_base, std::uint32_t guest_lo, std::uint64_t guest_hi);
+
+extern "C" uint32_t Win32_RegisterExport(const char* dll, const char* name, void* hostFn);
+extern "C" uint32_t Win32_ResolveImport(const char* dll, const char* name);
+extern "C" void* Win32_ResolveThunk(uint32_t guestAddr);
+extern "C" bool  Win32_IsThunkAddress(uint32_t guestAddr);
+
+struct Win32ExportRegistrar {
+    Win32ExportRegistrar(const char* dll, const char* name, void* fn) { Win32_RegisterExport(dll, name, fn); }
+};
+
+#define WIN32_EXPORT(dll, fn) \
+    static Win32ExportRegistrar win32_registrar_##fn(dll, #fn, reinterpret_cast<void*>(&fn))
+
+static inline uint32_t Win32_ToGuest(const void* p) { return static_cast<uint32_t>(reinterpret_cast<uintptr_t>(p)); }
+static inline void*    Win32_ToHost(uint32_t g)     { return reinterpret_cast<void*>(static_cast<uintptr_t>(g)); }
+
+// Protótipos kernel32
+WIN32_API DWORD   WINAPI GetLastError(void);
+WIN32_API void    WINAPI SetLastError(DWORD dwErrCode);
+WIN32_API LPVOID  WINAPI VirtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect);
+WIN32_API BOOL    WINAPI VirtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType);
+WIN32_API BOOL    WINAPI VirtualProtect(LPVOID lpAddress, SIZE_T dwSize, DWORD flNewProtect, LPDWORD lpflOldProtect);
+WIN32_API DWORD     WINAPI GetTickCount(void);
+WIN32_API ULONGLONG WINAPI GetTickCount64(void);
+WIN32_API void      WINAPI Sleep(DWORD dwMilliseconds);
+WIN32_API BOOL      WINAPI QueryPerformanceCounter(LARGE_INTEGER* lpPerformanceCount);
+WIN32_API BOOL      WINAPI QueryPerformanceFrequency(LARGE_INTEGER* lpFrequency);
+WIN32_API HMODULE WINAPI LoadLibraryA(LPCSTR lpLibFileName);
+WIN32_API BOOL    WINAPI FreeLibrary(HMODULE hLibModule);
+WIN32_API HMODULE WINAPI GetModuleHandleA(LPCSTR lpModuleName);
+WIN32_API FARPROC WINAPI GetProcAddress(HMODULE hModule, LPCSTR lpProcName);
