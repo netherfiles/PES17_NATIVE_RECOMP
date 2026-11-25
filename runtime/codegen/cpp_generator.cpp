@@ -64,7 +64,6 @@ std::string addressExpr(const ir::MemoryOperand& memory) {
 }
 
 bool validOperand(const ir::Operand& operand, std::string& error) {
-    // AGORA SUPORTA 8, 16 E 32 BITS
     if (operand.width != 0 && operand.width != 8 && operand.width != 16 && operand.width != 32) {
         error = "Unsupported operand width";
         return false;
@@ -250,6 +249,36 @@ bool emitInstruction(
             return true;
         }
 
+        // ADICIONADO SHIFT LEFT (SHL)
+        case ir::Opcode::ShiftLeft: {
+            if (!requireOperands(instruction, 2, error)) return false;
+            if (!emitRead(out, instruction.operands[0], "lhs_" + suffix, error)) return false;
+            if (!emitRead(out, instruction.operands[1], "rhs_" + suffix, error)) return false;
+            out << "        const std::uint32_t value_" << suffix << " = lhs_" << suffix << " << (rhs_" << suffix << " & 0x1F);\n";
+            out << "        state.flags.cf = ((lhs_" << suffix << " >> (32 - (rhs_" << suffix << " & 0x1F))) & 1) != 0;\n";
+            out << "        state.flags.zf = value_" << suffix << " == 0;\n"
+                << "        state.flags.sf = (value_" << suffix << " & 0x80000000u) != 0;\n";
+            return emitWrite(out, instruction.operands[0], "value_" + suffix, error);
+        }
+
+        // ADICIONADO BRANCH IF ABOVE (JA)
+        case ir::Opcode::BranchIfAbove: {
+            if (!instruction.hasTarget) {
+                error = "Conditional branch without target at 0x" + hexAddress(instruction.sourceAddress);
+                return false;
+            }
+            std::uint64_t fallthrough = 0;
+            for (const auto successor : block.successors)
+                if (successor != instruction.target) { fallthrough = successor; break; }
+            if (!fallthrough) {
+                error = "Conditional branch has no fallthrough at 0x" + hexAddress(instruction.sourceAddress);
+                return false;
+            }
+            out << "        if (!state.flags.cf && !state.flags.zf) goto " << blockLabel(instruction.target) << ";\n"
+                << "        goto " << blockLabel(fallthrough) << ";\n";
+            return true;
+        }
+
         case ir::Opcode::Test: {
             if (!requireOperands(instruction, 2, error)) return false;
             if (!emitRead(out, instruction.operands[0], "lhs_" + suffix, error)) return false;
@@ -415,6 +444,7 @@ GeneratedCode CppGenerator::generate(
         const bool terminates = last.opcode == ir::Opcode::Branch ||
             last.opcode == ir::Opcode::BranchIfEqual ||
             last.opcode == ir::Opcode::BranchIfNotEqual ||
+            last.opcode == ir::Opcode::BranchIfAbove ||
             last.opcode == ir::Opcode::Return ||
             last.opcode == ir::Opcode::CallDirect ||
             last.opcode == ir::Opcode::CallIndirect;
