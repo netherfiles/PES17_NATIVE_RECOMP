@@ -1,3 +1,4 @@
+
 #include "x86_lifter.h"
 #include <capstone/x86.h>
 
@@ -14,6 +15,13 @@ Register mapRegister(std::uint32_t reg) {
         case X86_REG_EDI: return Register::EDI;
         case X86_REG_EBP: return Register::EBP;
         case X86_REG_ESP: return Register::ESP;
+        
+        // CORREÇÃO ADICIONADA AQUI (Mapeia 8 e 16 bits para 32 bits)
+        case X86_REG_AL: case X86_REG_AH: case X86_REG_AX: return Register::EAX;
+        case X86_REG_BL: case X86_REG_BH: case X86_REG_BX: return Register::EBX;
+        case X86_REG_CL: case X86_REG_CH: case X86_REG_CX: return Register::ECX;
+        case X86_REG_DL: case X86_REG_DH: case X86_REG_DX: return Register::EDX;
+        
         default: return Register::None;
     }
 }
